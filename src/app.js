@@ -13,8 +13,7 @@ const offersRouter = require('./routers/financial/offers')
 const app = express()
 app.use(express.json({ limit: '5mb' })) // allow bigger file transfers
 app.use(express.urlencoded({ limit: '5mb', extended: true })) // allow bigger file transfers
-app.use(cors())
-cors({ credentials: true, origin: true }) // to bypass the access-control policy (this is vulnerable, though)
+app.use(cors({ origin: '*' }))
 app.use(
   fileUpload({
     limits: { fileSize: 50 * 1024 * 1024 },

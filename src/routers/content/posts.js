@@ -1,6 +1,7 @@
 const express = require('express')
 const router = new express.Router()
 
+const User = require('../../models/User')
 const Post = require('../../models/content/Post')
 const Answer = require('../../models/content/Answer')
 const Comment = require('../../models/content/Comment')
@@ -29,11 +30,27 @@ router.get('/:post', async (req, res) => {
 })
 
 // * create new post
-router.post('/', async (req, res) => {
+router.post('/:user', async (req, res) => {
   try {
     // create new post
-    const post = await new Post(req.body)
+    const post = await new Post({
+      ...req.body,
+      metadata: { author: req.params.user, owner: req.params.user },
+    })
+
+    // check that user has enough balance to post
+    const user = await User.findById(post.metadata.author)
+
+    if (user.balance < 1) {
+      return res.status(400).json({ errorMsg: 'Not enough balance.' })
+    }
+
     await post.save()
+
+    // update user balance
+    user.balance -= 1
+    await user.save()
+
     return res.status(201).json(post)
   } catch (err) {
     console.error(err)
