@@ -75,7 +75,9 @@ router.put('/:post', async (req, res) => {
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
 
     // update post
-    post = req.body
+    post.title = req.body.title
+    post.body = req.body.body
+    post.tags = req.body.tags
     await post.save()
     return res.status(200).json(post)
   } catch (err) {
@@ -95,7 +97,9 @@ router.delete('/:post', async (req, res) => {
     await Comment.deleteMany({ metadata: { post: req.params.post } })
 
     await post.delete()
-    return res.status(200).json(post)
+    return res
+      .status(200)
+      .json('Successfully deleted post (and related answers and comments).')
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })

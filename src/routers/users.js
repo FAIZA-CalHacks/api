@@ -26,33 +26,18 @@ router.get('/:user', async (req, res) => {
   }
 })
 
-// * get user by username
-router.get('/username/:username', async (req, res) => {
-  try {
-    const user = await User.findOne({ username: req.params.username })
-    if (!user) return res.status(404).json({ errorMsg: 'User not found.' })
-    res.status(200).json(user)
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ errorMsg: err.message })
-  }
-})
-
 // * register new user
 router.post('/', async (req, res) => {
   const { username, password } = req.body
   try {
-    // check whether a user with the provided email already exists
-    if (await User.findOne({ metadata: { username } })) {
-      console.error(err)
-      return res.status(400).json({ errorMsg: 'User already exists.' })
-    }
+    // check whether a user with the provided username already exists
+    if (await User.findOne({ username }))
+      return res.status(400).json({ errorMsg: `Username already exists.` })
+
     // create new user
     const user = await new User({
-      metadata: {
-        username,
-        password,
-      },
+      username,
+      password,
     })
     await user.save()
     return res.status(201).json(user)
