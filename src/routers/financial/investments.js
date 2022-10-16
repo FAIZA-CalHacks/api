@@ -27,13 +27,19 @@ router.post('/', async (req, res) => {
     const investment = await new Investment(req.body)
     await investment.save()
 
+    // check if user has enough money to invest
+    const user = await User.findById(investment.metadata.investor)
+    if (user.money < req.body.amount) {
+      await investment.delete()
+      return res.status(400).json({ errorMsg: 'Not enough money.' })
+    }
+
     // update post value
     const post = await Post.findById(investment.metadata.post)
     post.value += investment.amount
     await post.save()
 
     // update user balance
-    const user = await User.findById(investment.metadata.investor)
     user.balance -= investment.amount
     await user.save()
 

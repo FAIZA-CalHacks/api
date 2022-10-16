@@ -48,7 +48,6 @@ router.put('/:post', async (req, res) => {
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
 
     // update post
-    console.log(req.body)
     post.title = req.body.title
     post.body = req.body.body
     post.tags = req.body.tags
@@ -66,14 +65,17 @@ router.delete('/:post', async (req, res) => {
     const post = await Post.findById(req.params.post)
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
 
-    // delete linked answers and comments
-    await Answer.deleteMany({ metadata: { post: req.params.post } })
-    await Comment.deleteMany({ metadata: { post: req.params.post } })
+    // iterating through each answer with post id field, delete all comments with answer id, then delete answer
+    const answers = await Answer.find({ metadata: { post: req.params.post } })
+    for (let i = 0; i < answers.length; i++) {
+      await Comment.deleteMany({ metadata: { answer: answers[i]._id } })
+      await answers[i].delete()
+    }
 
     await post.delete()
-    return res
-      .status(200)
-      .json('Successfully deleted post (and related answers and comments).')
+    return res.status(200).json({
+      msg: 'Successfully deleted post (and related answers and comments).',
+    })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })

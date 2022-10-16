@@ -47,8 +47,8 @@ router.post('/', async (req, res) => {
   }
 })
 
-// * put user
-router.put('/:user', async (req, res) => {
+// * update bio or profile picture of user
+router.patch('/:user', async (req, res) => {
   try {
     const user = await User.findById(req.params.user)
     if (!user) return res.status(404).json({ errorMsg: 'User not found.' })

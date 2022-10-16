@@ -2,11 +2,14 @@ const express = require('express')
 const router = new express.Router()
 
 const Answer = require('../../models/content/Answer')
+const Comment = require('../../models/content/Comment')
 
 // * get all answers with post id
 router.get('/:post', async (req, res) => {
   try {
-    const answers = await Answer.find({ metadata: { post: req.params.post } })
+    const answers = await Answer.find({
+      'metadata.post': req.params.post,
+    })
     res.status(200).json(answers)
   } catch (err) {
     console.error(err)
@@ -14,27 +17,31 @@ router.get('/:post', async (req, res) => {
   }
 })
 
-// * create new answer
-router.post('/', async (req, res) => {
+// * create new answer on post
+router.post('/:post', async (req, res) => {
   try {
-    // create new answer
-    const answer = await new Answer(req.body)
+    const answer = new Answer({
+      ...req.body,
+      metadata: {
+        post: req.params.post,
+      },
+    })
     await answer.save()
-    return res.status(201).json(answer)
+    res.status(201).json(answer)
   } catch (err) {
     console.error(err)
-    return res.status(500).json({ errorMsg: 'Server Error' })
+    return res.status(500).json({ errorMsg: err.message })
   }
 })
 
-// * put answer
-router.put('/:answer', async (req, res) => {
+// * update answer body text
+router.patch('/:answer', async (req, res) => {
   try {
     const answer = await Answer.findById(req.params.answer)
     if (!answer) return res.status(404).json({ errorMsg: 'Answer not found.' })
 
     // update answer
-    answer = req.body
+    answer.body = req.body.body
     await answer.save()
     return res.status(200).json(answer)
   } catch (err) {
@@ -49,8 +56,13 @@ router.delete('/:answer', async (req, res) => {
     const answer = await Answer.findById(req.params.answer)
     if (!answer) return res.status(404).json({ errorMsg: 'Answer not found.' })
 
+    // delete all comments with answer id
+    await Comment.deleteMany({ metadata: { answer: req.params.answer } })
+
     await answer.delete()
-    return res.status(200).json(answer)
+    return res
+      .status(200)
+      .json({ msg: 'Successfully deleted answer and its comments.' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })

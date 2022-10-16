@@ -7,7 +7,7 @@ const Comment = require('../../models/content/Comment')
 router.get('/:answer', async (req, res) => {
   try {
     const comments = await Comment.find({
-      metadata: { answer: req.params.answer },
+      'metadata.answer': req.params.answer,
     })
     res.status(200).json(comments)
   } catch (err) {
@@ -17,27 +17,31 @@ router.get('/:answer', async (req, res) => {
 })
 
 // * create new comment
-router.post('/', async (req, res) => {
+router.post('/:answer', async (req, res) => {
   try {
-    // create new comment
-    const comment = await new Comment(req.body)
+    const comment = new Comment({
+      ...req.body,
+      metadata: {
+        answer: req.params.answer,
+      },
+    })
     await comment.save()
-    return res.status(201).json(comment)
+    res.status(201).json(comment)
   } catch (err) {
     console.error(err)
-    return res.status(500).json({ errorMsg: 'Server Error' })
+    return res.status(500).json({ errorMsg: err.message })
   }
 })
 
-// * put comment
-router.put('/:comment', async (req, res) => {
+// * update comment body text
+router.patch('/:comment', async (req, res) => {
   try {
     const comment = await Comment.findById(req.params.comment)
     if (!comment)
       return res.status(404).json({ errorMsg: 'Comment not found.' })
 
     // update comment
-    comment = req.body
+    if (req.body.body) comment.body = req.body.body
     await comment.save()
     return res.status(200).json(comment)
   } catch (err) {
@@ -54,7 +58,7 @@ router.delete('/:comment', async (req, res) => {
       return res.status(404).json({ errorMsg: 'Comment not found.' })
 
     await comment.delete()
-    return res.status(200).json(comment)
+    return res.status(200).json({ msg: 'Successfully deleted comment.' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })
