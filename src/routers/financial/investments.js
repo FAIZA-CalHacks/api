@@ -84,3 +84,5 @@ router.delete('/:investment', async (req, res) => {
     return res.status(500).json({ errorMsg: 'Server Error' })
   }
 })
+
+module.exports = router
