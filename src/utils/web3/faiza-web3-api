@@ -1,0 +1,60 @@
+const axios = require('axios')
+const FormData = require('form-data')
+
+const WEB3_API_URL = 'https://faiza-ml.herokuapp.com'
+
+const mintNft = async (title, postId, ownerId) => {
+  try {
+    const data = new FormData()
+    data.append('title', title)
+    data.append('postId', postId)
+    data.append('ownerId', ownerId)
+
+    const config = {
+      method: 'post',
+      url: WEB3_API_URL + '/mint',
+      headers: {
+        ...data.getHeaders(),
+      },
+      data,
+    }
+
+    const response = await axios(config)
+    const nftId = response.data
+
+    return nftId
+  } catch (err) {
+    console.error(err)
+    return err
+  }
+}
+
+const transferNft = async (nftId, newOwnerId) => {
+  try {
+    const data = new FormData()
+    data.append('nftId', nftId)
+    data.append('newOwnerId', newOwnerId)
+
+    const config = {
+      method: 'post',
+      url: WEB3_API_URL + '/transfer',
+      headers: {
+        ...data.getHeaders(),
+      },
+      data,
+    }
+
+    const response = await axios(config)
+    const newNftId = response.data
+
+    return newNftId
+  } catch (err) {
+    console.error(err)
+    return err
+  }
+}
+
+module.exports = {
+  mintNft,
+  transferNft,
+}

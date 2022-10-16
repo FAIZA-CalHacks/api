@@ -11,9 +11,9 @@ const investmentsRouter = require('./routers/financial/investments')
 const offersRouter = require('./routers/financial/offers')
 
 const app = express()
+app.use(cors({ origin: '*' }))
 app.use(express.json({ limit: '5mb' })) // allow bigger file transfers
 app.use(express.urlencoded({ limit: '5mb', extended: true })) // allow bigger file transfers
-app.use(cors({ origin: '*' }))
 app.use(fileUpload())
 
 app.get('/', (req, res) => {
