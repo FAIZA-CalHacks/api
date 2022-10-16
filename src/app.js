@@ -14,11 +14,11 @@ const app = express()
 app.use(express.json({ limit: '5mb' })) // allow bigger file transfers
 app.use(express.urlencoded({ limit: '5mb', extended: true })) // allow bigger file transfers
 app.use(cors({ origin: '*' }))
-app.use(
-  fileUpload({
-    limits: { fileSize: 50 * 1024 * 1024 },
-  })
-)
+app.use(fileUpload())
+
+app.get('/', (req, res) => {
+  res.send("Welcome to FAIZA's API!")
+})
 
 app.use('/api/users', usersRouter)
 app.use('/api/posts', postsRouter)

@@ -6,11 +6,27 @@ const Post = require('../../models/content/Post')
 const Answer = require('../../models/content/Answer')
 const Comment = require('../../models/content/Comment')
 
-// * get all posts
-router.get('/', async (req, res) => {
+const generateCarbonImage = require('../../utils/content/generateCarbonImage')
+
+// * get post previews for the feed
+router.get('/:skip', async (req, res) => {
   try {
+    if (req.params.skip === 'undefined') {
+      req.params.skip = 0
+    }
+
     const posts = await Post.find({})
-    res.status(200).json(posts)
+      .skip(req.params.skip)
+      .limit(10)
+      .sort({ value: 1 })
+
+    // send only the previews and the post ids
+    const previews = posts.map((post) => ({
+      _id: post._id,
+      preview: post.preview,
+    }))
+
+    res.status(200).json(previews)
   } catch (err) {
     console.error(err)
     res.status(500).json({ errorMsg: err.message })
@@ -45,6 +61,13 @@ router.post('/:user', async (req, res) => {
       return res.status(400).json({ errorMsg: 'Not enough balance.' })
     }
 
+    // create carbon image for post title
+    const base64String = await generateCarbonImage(
+      post.title,
+      post.preview.theme
+    )
+    post.preview.base64String = base64String
+
     await post.save()
 
     // update user balance
@@ -61,14 +84,22 @@ router.post('/:user', async (req, res) => {
 // * put post
 router.put('/:post', async (req, res) => {
   try {
-    const post = await Post.findById(req.params.post)
+    let post = await Post.findByIdAndUpdate(req.params.post, req.body, {
+      new: true,
+      runValidators: true,
+    })
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
 
-    // update post
-    post.title = req.body.title
-    post.body = req.body.body
-    post.tags = req.body.tags
-    await post.save()
+    // if theme or title changed, update carbon image
+    if (req.body['preview.theme'] || req.body.title) {
+      const base64String = await generateCarbonImage(
+        post.title,
+        post.preview.theme
+      )
+      post.preview.base64String = base64String
+      await post.save()
+    }
+
     return res.status(200).json(post)
   } catch (err) {
     console.error(err)
