@@ -7,6 +7,10 @@ const Answer = require('../../models/content/Answer')
 const Comment = require('../../models/content/Comment')
 
 const generateCarbonImage = require('../../utils/content/generateCarbonImage')
+const {
+  categorizePost,
+  checkToxicText,
+} = require('../../utils/content/faiza-ml-api')
 
 // * get post previews for the feed
 router.get('/previews', async (req, res) => {
@@ -31,7 +35,7 @@ router.get('/:post', async (req, res) => {
   try {
     const post = await Post.findById(req.params.post)
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
-    res.status(200).json(post)
+    return res.status(200).json(post)
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: err.message })
@@ -49,10 +53,21 @@ router.post('/:user', async (req, res) => {
 
     // check that user has enough balance to post
     const user = await User.findById(post.metadata.author)
-
     if (user.balance < 1) {
       return res.status(400).json({ errorMsg: 'Not enough balance.' })
     }
+
+    // categorize post
+    categorizePost(post.title).then((category) => {
+      post.category = category
+    })
+
+    // check if content is toxic
+    checkToxicText(post.body).then((toxic) => {
+      if (toxic) {
+        return res.status(400).json({ errorMsg: 'Toxic content.' })
+      }
+    })
 
     // create carbon image for post title
     const base64String = await generateCarbonImage(
@@ -77,11 +92,25 @@ router.post('/:user', async (req, res) => {
 // * put post
 router.put('/:post', async (req, res) => {
   try {
+    // check if content is toxic
+    if (req.body.body) {
+      const toxic = await checkToxicText(req.body.body)
+      if (toxic) {
+        return res.status(400).json({ errorMsg: 'Toxic content.' })
+      }
+    }
+
     let post = await Post.findByIdAndUpdate(req.params.post, req.body, {
       new: true,
       runValidators: true,
     })
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
+
+    // categorize post
+    if (req.body.title)
+      categorizePost(post.title).then((category) => {
+        post.category = category
+      })
 
     // if theme or title changed, update carbon image
     if (req.body['preview.theme'] || req.body.title) {
@@ -114,6 +143,7 @@ router.delete('/:post', async (req, res) => {
     }
 
     await post.delete()
+
     return res.status(200).json({
       msg: 'Successfully deleted post (and related answers and comments).',
     })

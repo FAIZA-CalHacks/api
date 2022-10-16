@@ -9,7 +9,7 @@ const PostSchema = new Schema({
   },
   title: { type: String, trim: true, required: true },
   body: { type: String, trim: true, required: true },
-  tags: { type: [String], default: [] },
+  category: { type: String, default: 'General' },
   value: { type: Number, default: 1 },
   preview: {
     theme: {

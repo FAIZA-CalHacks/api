@@ -3,6 +3,8 @@ const router = new express.Router()
 
 const Comment = require('../../models/content/Comment')
 
+const { checkToxicText } = require('../../utils/content/faiza-ml-api')
+
 // * get all comments with answer id
 router.get('/:answer', async (req, res) => {
   try {
@@ -19,12 +21,19 @@ router.get('/:answer', async (req, res) => {
 // * create new comment
 router.post('/:answer', async (req, res) => {
   try {
+    // check if comment is toxic
+    const toxic = await checkToxicText(req.body.body)
+    if (toxic) {
+      return res.status(400).json({ errorMsg: 'Toxic content.' })
+    }
+
     const comment = new Comment({
       ...req.body,
       metadata: {
         answer: req.params.answer,
       },
     })
+
     await comment.save()
     res.status(201).json(comment)
   } catch (err) {
@@ -41,7 +50,14 @@ router.patch('/:comment', async (req, res) => {
       return res.status(404).json({ errorMsg: 'Comment not found.' })
 
     // update comment
-    if (req.body.body) comment.body = req.body.body
+    if (req.body.body) {
+      // check if comment is toxic
+      const toxic = await checkToxicText(req.body.body)
+      if (toxic) {
+        return res.status(400).json({ errorMsg: 'Toxic content.' })
+      }
+      comment.body = req.body.body
+    }
     await comment.save()
     return res.status(200).json(comment)
   } catch (err) {
