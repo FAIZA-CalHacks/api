@@ -15,7 +15,7 @@ const PostSchema = new Schema({
   preview: {
     theme: {
       type: String,
-      default: 'dracula',
+      default: 'one-light',
       enum: [
         '3024-night',
         'a11y-dark',
