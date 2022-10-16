@@ -9,7 +9,7 @@ const Comment = require('../../models/content/Comment')
 const generateCarbonImage = require('../../utils/content/generateCarbonImage')
 
 // * get post previews for the feed
-router.get('/:skip', async (req, res) => {
+router.get('/previews/:skip', async (req, res) => {
   try {
     if (req.params.skip === 'undefined') {
       req.params.skip = 0
