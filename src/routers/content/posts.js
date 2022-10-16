@@ -9,16 +9,9 @@ const Comment = require('../../models/content/Comment')
 const generateCarbonImage = require('../../utils/content/generateCarbonImage')
 
 // * get post previews for the feed
-router.get('/previews/:skip', async (req, res) => {
+router.get('/previews', async (req, res) => {
   try {
-    if (req.params.skip === 'undefined') {
-      req.params.skip = 0
-    }
-
-    const posts = await Post.find({})
-      .skip(req.params.skip)
-      .limit(10)
-      .sort({ value: 1 })
+    const posts = await Post.find({}).limit(10)
 
     // send only the previews and the post ids
     const previews = posts.map((post) => ({
