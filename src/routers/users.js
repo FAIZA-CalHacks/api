@@ -54,7 +54,10 @@ router.put('/:user', async (req, res) => {
     if (!user) return res.status(404).json({ errorMsg: 'User not found.' })
 
     // update user
-    user = req.body
+    const { bio, profilePicture } = req.body
+    if (bio) user.profile.bio = bio
+    if (profilePicture) user.profile.profilePicture = profilePicture
+
     await user.save()
     return res.status(200).json(user)
   } catch (err) {

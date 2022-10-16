@@ -16,33 +16,6 @@ router.get('/', async (req, res) => {
   }
 })
 
-// * search for keyword in post
-router.get('/search/:keyword', async (req, res) => {
-  try {
-    const posts = await Post.find({
-      $text: { $search: req.params.keyword },
-    })
-    res.status(200).json(posts)
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ errorMsg: err.message })
-  }
-})
-
-// * search for tags in post
-router.get('/search/tags/:tags', async (req, res) => {
-  try {
-    // might work if I put this in an array
-    const posts = await Post.find({
-      tags: { $in: req.params.tags.split(',') },
-    })
-    res.status(200).json(posts)
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ errorMsg: err.message })
-  }
-})
-
 // * get post by id
 router.get('/:post', async (req, res) => {
   try {
@@ -75,6 +48,7 @@ router.put('/:post', async (req, res) => {
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
 
     // update post
+    console.log(req.body)
     post.title = req.body.title
     post.body = req.body.body
     post.tags = req.body.tags
