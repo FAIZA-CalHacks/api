@@ -1,0 +1,23 @@
+{
+  "name": "faiza-api",
+  "author": "Joonbeom Kwon",
+  "license": "UNLICENSED",
+  "version": "0.0.1",
+  "description": "making medical advice accessible for the whole world through web3",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.2",
+    "express": "^4.18.1",
+    "express-fileupload": "^1.4.0",
+    "mongoose": "^6.6.1",
+    "path": "^0.12.7",
+    "read-text-file": "^1.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
