@@ -28,6 +28,7 @@ router.get('/:user', async (req, res) => {
 
 // * register new user
 router.post('/', async (req, res) => {
+  console.log(req)
   const { username, password } = req.body
   try {
     // check whether a user with the provided username already exists

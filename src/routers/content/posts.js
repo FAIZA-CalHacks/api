@@ -11,7 +11,7 @@ const {
   categorizePost,
   checkToxicText,
 } = require('../../utils/content/faiza-ml-api')
-const { mintNft } = require('../../utils/web3/faiza-web3-api')
+// const { mintNft } = require('../../utils/web3/faiza-web3-api')
 
 // * get post previews for the feed
 router.get('/previews', async (req, res) => {
@@ -63,12 +63,9 @@ router.post('/:user', async (req, res) => {
       post.category = category
     })
 
-    // check if content is toxic
-    checkToxicText(post.body).then((toxic) => {
-      if (toxic) {
-        return res.status(400).json({ errorMsg: 'Toxic content.' })
-      }
-    })
+    // // check if content is toxic
+    // const toxic = await checkToxicText(post.body)
+    // if (toxic) return res.status(400).json({ errorMsg: 'Toxic content.' })
 
     // create carbon image for post title
     const base64String = await generateCarbonImage(
@@ -77,10 +74,10 @@ router.post('/:user', async (req, res) => {
     )
     post.preview.base64String = base64String
 
-    // mint nft
-    mintNft(post.title, post._id, post.metadata.author).then((nftCid) => {
-      post.metadata.nftCid = nftCid
-    })
+    // // mint nft
+    // mintNft(post.title, post._id, post.metadata.author).then((nftCid) => {
+    //   post.metadata.nftCid = nftCid
+    // })
 
     await post.save()
 
