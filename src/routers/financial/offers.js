@@ -5,6 +5,8 @@ const Offer = require('../../models/financial/Offer')
 const User = require('../../models/User')
 const Post = require('../../models/content/Post')
 
+const { transferNft } = require('../../utils/web3/faiza-web3-api')
+
 // * get all offers with post id
 router.get('/:post', async (req, res) => {
   try {
@@ -95,6 +97,10 @@ router.patch('/accept/:offer', async (req, res) => {
     // transfer ownership of post
     const post = await Post.findById(offer.metadata.post)
     post.metadata.owner = offer.metadata.buyer
+
+    // transfer ownership of nft and save resulting new Cid
+    const newCid = await transferNft(post.metadata.nftCid, offer.metadata.buyer)
+    post.metadata.nftCid = newCid
     await post.save()
 
     return res.status(200).json({

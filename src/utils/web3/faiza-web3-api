@@ -1,14 +1,19 @@
 const axios = require('axios')
 const FormData = require('form-data')
+const stringHash = require('string-hash')
 
-const WEB3_API_URL = 'https://faiza-ml.herokuapp.com'
+const WEB3_API_URL = 'localhost:3333'
 
 const mintNft = async (title, postId, ownerId) => {
   try {
+    // turn postId and ownerId into unique integers
+    const postIdInt = stringHash(postId)
+    const ownerIdInt = stringHash(ownerId)
+
     const data = new FormData()
     data.append('title', title)
-    data.append('postId', postId)
-    data.append('ownerId', ownerId)
+    data.append('post', postIdInt)
+    data.append('owner', ownerIdInt)
 
     const config = {
       method: 'post',
@@ -20,9 +25,9 @@ const mintNft = async (title, postId, ownerId) => {
     }
 
     const response = await axios(config)
-    const nftId = response.data
+    const cid = response.data
 
-    return nftId
+    return cid
   } catch (err) {
     console.error(err)
     return err
@@ -31,9 +36,12 @@ const mintNft = async (title, postId, ownerId) => {
 
 const transferNft = async (nftId, newOwnerId) => {
   try {
+    // turn newOwnerId into an unique integer
+    const newOwnerIdInt = stringHash(newOwnerId)
+
     const data = new FormData()
     data.append('nftId', nftId)
-    data.append('newOwnerId', newOwnerId)
+    data.append('newOwner', newOwnerIdInt)
 
     const config = {
       method: 'post',
@@ -45,9 +53,9 @@ const transferNft = async (nftId, newOwnerId) => {
     }
 
     const response = await axios(config)
-    const newNftId = response.data
+    const newCid = response.data
 
-    return newNftId
+    return newCid
   } catch (err) {
     console.error(err)
     return err

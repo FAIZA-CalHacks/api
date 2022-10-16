@@ -11,6 +11,7 @@ const {
   categorizePost,
   checkToxicText,
 } = require('../../utils/content/faiza-ml-api')
+const { mintNft } = require('../../utils/web3/faiza-web3-api')
 
 // * get post previews for the feed
 router.get('/previews', async (req, res) => {
@@ -75,6 +76,11 @@ router.post('/:user', async (req, res) => {
       post.preview.theme
     )
     post.preview.base64String = base64String
+
+    // mint nft
+    mintNft(post.title, post._id, post.metadata.author).then((nftCid) => {
+      post.metadata.nftCid = nftCid
+    })
 
     await post.save()
 
