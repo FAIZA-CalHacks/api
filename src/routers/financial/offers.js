@@ -3,8 +3,9 @@ const router = new express.Router()
 
 const Offer = require('../../models/financial/Offer')
 const User = require('../../models/User')
+const Post = require('../../models/content/Post')
 
-// get all offers with post id
+// * get all offers with post id
 router.get('/:post', async (req, res) => {
   try {
     const offers = await Offer.find({
@@ -17,17 +18,29 @@ router.get('/:post', async (req, res) => {
   }
 })
 
-// create new offer
-router.post('/', async (req, res) => {
+// * create new offer
+router.post('/:post', async (req, res) => {
   try {
-    // create new offer
-    const offer = await new Offer(req.body)
-    await offer.save()
+    const offer = new Offer({
+      ...req.body,
+      metadata: { post: req.params.post },
+    })
 
-    // check that user has enough balance
+    // check that user has enough balance to offer
     const user = await User.findById(offer.metadata.buyer)
     if (user.balance < offer.amount)
       return res.status(400).json({ errorMsg: 'Insufficient balance.' })
+
+    // get owner of post
+    const post = await Post.findById(req.params.post)
+    offer.metadata.owner = post.metadata.owner
+
+    // check that owner is not the same as buyer
+    if (offer.metadata.owner.toString() == offer.metadata.buyer.toString())
+      return res.status(400).json({ errorMsg: 'Cannot offer on own post.' })
+
+    // save offer
+    await offer.save()
 
     // update user balance
     user.balance -= offer.amount
@@ -40,11 +53,17 @@ router.post('/', async (req, res) => {
   }
 })
 
-// offer was accepted
-router.patch('/:offer', async (req, res) => {
+// * accept offer
+router.patch('/accept/:offer', async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.offer)
     if (!offer) return res.status(404).json({ errorMsg: 'Offer not found.' })
+
+    // check that offer is not already accepted or rejected
+    if (offer.result != null)
+      return res
+        .status(400)
+        .json({ errorMsg: 'Offer already accepted/rejected.' })
 
     // update offer result
     offer.result = true
@@ -73,24 +92,37 @@ router.patch('/:offer', async (req, res) => {
     owner.balance += offer.amount
     await owner.save()
 
-    return res.status(200).json(offer)
+    // transfer ownership of post
+    const post = await Post.findById(offer.metadata.post)
+    post.metadata.owner = offer.metadata.buyer
+    await post.save()
+
+    return res.status(200).json({
+      msg: 'Successfully accepted offer, completed transaction, and automatically canceled other offers made by user if balance is insufficient.',
+    })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })
   }
 })
 
-// offer was rejected
-router.delete('/:offer', async (req, res) => {
+// * decline offer
+router.delete('/decline/:offer', async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.offer)
     if (!offer) return res.status(404).json({ errorMsg: 'Offer not found.' })
+
+    // check that offer is not already accepted or rejected
+    if (offer.result != null)
+      return res
+        .status(400)
+        .json({ errorMsg: 'Offer already accepted/rejected.' })
 
     // update offer result
     offer.result = false
     await offer.save()
 
-    return res.status(200).json(offer)
+    return res.status(200).json({ msg: 'Successfully rejected offer.' })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })

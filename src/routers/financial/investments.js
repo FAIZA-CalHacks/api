@@ -5,15 +5,31 @@ const Investment = require('../../models/financial/Investment')
 const User = require('../../models/User')
 const Post = require('../../models/content/Post')
 
-const calculateInvestmentOutcome = require('../../utils/calculateInvestmentOutcome')
+const {
+  calculateInvestmentOutcomeToTwoDecimals,
+  calculatePercentageReturnToTwoDecimals,
+} = require('../../utils/financial/investmentValue')
 
 // * get all investments with post id
-router.get('/:post', async (req, res) => {
+router.get('/post/:post', async (req, res) => {
   try {
     const investments = await Investment.find({
       'metadata.post': req.params.post,
     })
     res.status(200).json(investments)
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ errorMsg: err.message })
+  }
+})
+
+// * get investment by id
+router.get('/:investment', async (req, res) => {
+  try {
+    const investment = await Investment.findById(req.params.investment)
+    if (!investment)
+      return res.status(404).json({ errorMsg: 'Investment not found.' })
+    res.status(200).json(investment)
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: err.message })
@@ -35,22 +51,20 @@ router.post('/:post', async (req, res) => {
       return res.status(400).json({ errorMsg: 'Not enough balance.' })
     }
 
-    // record value of post at time of investment
-    const post = await Post.findById(investment.metadata.post)
-    investment.metadata.postValueAtTimeOfInvestment = post.value
-    await investment.save()
-
     // update post value
+    const post = await Post.findById(investment.metadata.post)
     post.value += investment.amount
     await post.save()
+
+    // record value of post at time of investment
+    investment.metadata.postValueAtTimeOfInvestment = post.value
+    await investment.save()
 
     // update user balance
     user.balance -= investment.amount
     await user.save()
 
-    return res.status(201).json({
-      investment,
-    })
+    return res.status(201).json(investment)
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })
@@ -68,18 +82,23 @@ router.delete('/:investment', async (req, res) => {
     const user = await User.findById(investment.metadata.user)
     if (!user) return res.status(404).json({ errorMsg: 'User not found.' })
 
-    console.log(user)
     const post = await Post.findById(investment.metadata.post)
     if (!post) return res.status(404).json({ errorMsg: 'Post not found.' })
 
-    const currentPostValue = post.metadata.value
-    const previousPostValue = investment.metadata.postValue
+    const currentPostValue = post.value
+    const postValueAtTimeOfInvestment =
+      investment.metadata.postValueAtTimeOfInvestment
     const amount = investment.amount
 
-    const investmentOutcome = calculateInvestmentOutcome(
-      previousPostValue,
+    const investmentOutcome = calculateInvestmentOutcomeToTwoDecimals(
+      amount,
       currentPostValue,
-      amount
+      postValueAtTimeOfInvestment
+    )
+
+    const percentageReturn = calculatePercentageReturnToTwoDecimals(
+      amount,
+      investmentOutcome
     )
 
     // update user balance
@@ -92,7 +111,11 @@ router.delete('/:investment', async (req, res) => {
 
     // delete investment
     await investment.remove()
-    return res.status(200).json(investment)
+    return res.status(200).json({
+      msg: 'Successfully retrieved investment.',
+      investmentOutcome,
+      percentageReturn,
+    })
   } catch (err) {
     console.error(err)
     return res.status(500).json({ errorMsg: 'Server Error' })

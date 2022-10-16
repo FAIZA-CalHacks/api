@@ -47,16 +47,17 @@ router.post('/', async (req, res) => {
   }
 })
 
-// * update bio or profile picture of user
+// * update bio, profile picture, or balance of user
 router.patch('/:user', async (req, res) => {
   try {
     const user = await User.findById(req.params.user)
     if (!user) return res.status(404).json({ errorMsg: 'User not found.' })
 
     // update user
-    const { bio, profilePicture } = req.body
+    const { bio, profilePicture, balance } = req.body
     if (bio) user.profile.bio = bio
     if (profilePicture) user.profile.profilePicture = profilePicture
+    if (balance) user.balance = balance
 
     await user.save()
     return res.status(200).json(user)
