@@ -1,6 +1,5 @@
 const express = require('express')
 require('./db/mongoose.js')
-const cors = require('cors')
 
 const usersRouter = require('./routers/users')
 const postsRouter = require('./routers/content/posts')
@@ -10,9 +9,14 @@ const investmentsRouter = require('./routers/financial/investments')
 const offersRouter = require('./routers/financial/offers')
 
 const app = express()
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With')
+  next()
+})
 app.use(express.json({ limit: '5mb' })) // allow bigger file transfers
 app.use(express.urlencoded({ limit: '5mb', extended: true })) // allow bigger file transfers
-app.use(cors({ origin: '*' }))
 
 app.get('/', (req, res) => {
   res.send("Welcome to FAIZA's API!")
